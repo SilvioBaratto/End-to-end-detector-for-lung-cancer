@@ -28,14 +28,14 @@ def cleanCache():
 
 # cleanCache()
 
+training_epochs = 20
+experiment_epochs = 10
+final_epochs = 50
+
+training_epochs = 2
+experiment_epochs = 2
+final_epochs = 5
+seg_epochs = 10
+
 if __name__ == '__main__':
-    training_epochs = 20
-    experiment_epochs = 10
-    final_epochs = 50
-
-    training_epochs = 2
-    experiment_epochs = 2
-    final_epochs = 5
-    seg_epochs = 10
-
     run('training.LunaTrainingApp', '--epochs=1')
