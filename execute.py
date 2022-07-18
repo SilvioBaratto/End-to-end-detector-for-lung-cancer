@@ -38,4 +38,9 @@ final_epochs = 5
 seg_epochs = 10
 
 if __name__ == '__main__':
-    run('training.LunaTrainingApp', '--epochs=1')
+    run('prepcache.LunaPrepCacheApp')
+    run('training.LunaTrainingApp', f'--epochs={training_epochs}', '--balanced', '--augmented', 'fully-augmented')
+    
+    
+    
+    

@@ -44,7 +44,7 @@ class LunaPrepCacheApp:
 
         self.prep_dl = DataLoader(
             LunaDataset(
-                sortby_str='series_uid',
+                # sortby_str='series_uid',
             ),
             batch_size=self.cli_args.batch_size,
             num_workers=self.cli_args.num_workers,
