@@ -21,6 +21,8 @@ from util.util import enumerateWithEstimate
 from datasets import Luna2dSegmentationDataset, getCt, getCandidateInfoList, getCandidateInfoDict, CandidateInfoTuple
 from datasets import LunaDataset
 from model import LunaModel
+import datasets
+import model
 
 from util.util import enumerateWithEstimate
 from util.logconf import logging
