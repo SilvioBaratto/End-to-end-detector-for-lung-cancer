@@ -9,7 +9,7 @@ from torch.optim import SGD
 from torch.utils.data import Dataset, DataLoader
 
 from util.util import enumerateWithEstimate, prhist
-from .datasets import getCandidateInfoList, getCtSize, getCt
+from datasets import getCandidateInfoList, getCtSize, getCt
 from util.logconf import logging
 # from .model import LunaModel
 

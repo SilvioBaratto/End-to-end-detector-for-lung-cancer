@@ -14,8 +14,8 @@ import torch.optim
 from torch.utils.data import DataLoader
 
 from util.util import enumerateWithEstimate
-from .datasets import Luna2dSegmentationDataset
-from .datasets import LunaDataset, getCt, getCandidateInfoDict, getCandidateInfoList, CandidateInfoTuple
+from datasets import Luna2dSegmentationDataset
+from datasets import LunaDataset, getCt, getCandidateInfoDict, getCandidateInfoList, CandidateInfoTuple
 from model import UNetWrapper
 
 import model

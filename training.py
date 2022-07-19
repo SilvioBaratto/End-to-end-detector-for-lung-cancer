@@ -15,7 +15,7 @@ import torch.nn as nn
 from torch.optim import SGD, Adam
 from torch.utils.data import DataLoader
 
-import .datasets
+import datasets
 import  model
 
 from util.util import enumerateWithEstimate
