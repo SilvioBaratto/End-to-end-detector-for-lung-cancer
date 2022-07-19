@@ -83,7 +83,7 @@ def getCandidateInfoList(requireOnDisk_bool=True):
 class Ct:
     def __init__(self, series_uid):
         mhd_path = glob.glob(
-            '../data-unversioned/LUNA/subset*/{}.mhd'.format(series_uid)
+            'data-unversioned/LUNA/subset*/{}.mhd'.format(series_uid)
         )[0]
 
         ct_mhd = sitk.ReadImage(mhd_path)
