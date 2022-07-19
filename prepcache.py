@@ -9,7 +9,7 @@ from torch.optim import SGD
 from torch.utils.data import DataLoader
 
 from util.util import enumerateWithEstimate
-from .dsets import LunaDataset, getCtSampleSize
+from .datasets import LunaDataset, getCtSampleSize
 from util.logconf import logging
 # from .model import LunaModel
 

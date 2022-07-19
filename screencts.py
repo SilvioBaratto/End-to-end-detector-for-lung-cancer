@@ -9,7 +9,7 @@ from torch.optim import SGD
 from torch.utils.data import Dataset, DataLoader
 
 from util.util import enumerateWithEstimate, prhist
-from .dsets import getCandidateInfoList, getCtSize, getCt
+from .datasets import getCandidateInfoList, getCtSize, getCt
 from util.logconf import logging
 # from .model import LunaModel
 
@@ -84,9 +84,6 @@ class LunaScreenCtApp:
             # break
 
         prhist(list(series2ratio_dict.values()))
-
-
-
 
 if __name__ == '__main__':
     LunaScreenCtApp().main()

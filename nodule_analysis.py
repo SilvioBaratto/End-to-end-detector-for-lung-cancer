@@ -14,11 +14,11 @@ import torch.optim
 from torch.utils.data import DataLoader
 
 from util.util import enumerateWithEstimate
-from p2ch13.dsets import Luna2dSegmentationDataset
-from .dsets import LunaDataset, getCt, getCandidateInfoDict, getCandidateInfoList, CandidateInfoTuple
-from p2ch13.model import UNetWrapper
+from .datasets import Luna2dSegmentationDataset
+from .datasets import LunaDataset, getCt, getCandidateInfoDict, getCandidateInfoList, CandidateInfoTuple
+from model import UNetWrapper
 
-import p2ch14.model
+import model
 
 from util.logconf import logging
 from util.util import xyz2irc, irc2xyz
@@ -227,7 +227,7 @@ class NoduleAnalysisApp:
         log.debug(self.cli_args.classification_path)
         cls_dict = torch.load(self.cli_args.classification_path)
 
-        model_cls = getattr(p2ch14.model, self.cli_args.cls_model)
+        model_cls = getattr(model, self.cli_args.cls_model)
         cls_model = model_cls()
         cls_model.load_state_dict(cls_dict['model_state'])
         cls_model.eval()
@@ -241,7 +241,7 @@ class NoduleAnalysisApp:
             cls_model.to(self.device)
 
         if self.cli_args.malignancy_path:
-            model_cls = getattr(p2ch14.model, self.cli_args.malignancy_model)
+            model_cls = getattr(model, self.cli_args.malignancy_model)
             malignancy_model = model_cls()
             malignancy_dict = torch.load(self.cli_args.malignancy_path)
             malignancy_model.load_state_dict(malignancy_dict['model_state'])

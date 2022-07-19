@@ -45,7 +45,8 @@ def getCandidateInfoList(requireOnDisk_bool=True):
     presentOnDisk_set = {os.path.split(p)[-1][:-4] for p in mhd_list}
 
     candidateInfo_list = []
-    with open('data/part2/luna/annotations_with_malignancy.csv', "r") as f:
+
+    with open('../LUNA/annotations_with_malignancy.csv', "r") as f:
         for row in list(csv.reader(f))[1:]:
             series_uid = row[0]
             annotationCenter_xyz = tuple([float(x) for x in row[1:4]])
@@ -54,7 +55,7 @@ def getCandidateInfoList(requireOnDisk_bool=True):
 
             candidateInfo_list.append(CandidateInfoTuple(True, True, isMal_bool, annotationDiameter_mm, series_uid, annotationCenter_xyz))
 
-    with open('data/part2/luna/candidates.csv', "r") as f:
+    with open('../LUNA/candidates.csv', "r") as f:
         for row in list(csv.reader(f))[1:]:
             series_uid = row[0]
 
@@ -91,7 +92,7 @@ def getCandidateInfoDict(requireOnDisk_bool=True):
 class Ct:
     def __init__(self, series_uid):
         mhd_path = glob.glob(
-            'data-unversioned/part2/luna/subset*/{}.mhd'.format(series_uid)
+            '../LUNA/subset*/{}.mhd'.format(series_uid)
         )[0]
 
         ct_mhd = sitk.ReadImage(mhd_path)
@@ -167,7 +168,6 @@ def getCtAugmentedCandidate(
     ct_t = torch.tensor(ct_chunk).unsqueeze(0).unsqueeze(0).to(torch.float32)
 
     transform_t = torch.eye(4)
-    # ... <1>
 
     for i in range(3):
         if 'flip' in augmentation_dict:
