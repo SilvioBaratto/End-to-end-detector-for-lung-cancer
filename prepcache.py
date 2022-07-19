@@ -33,7 +33,7 @@ class LunaPrepCacheApp:
         )
         parser.add_argument('--num-workers',
             help='Number of worker processes for background data loading',
-            default=8,
+            default=24,
             type=int,
         )
 

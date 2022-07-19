@@ -12,7 +12,7 @@ log = logging.getLogger('nb')
 
 def run(app, *argv):
     argv = list(argv)
-    argv.insert(0, '--num-workers=4')  # <1>
+    argv.insert(0, '--num-workers=24')  # <1>
     log.info("Running: {}({!r}).main()".format(app, argv))
     
     app_cls = importstr(*app.rsplit('.', 1))  # <2>
