@@ -181,14 +181,14 @@ class NoduleAnalysisApp:
     def initModelPath(self, type_str):
         local_path = os.path.join(
             'models',
-            type_str + '_{}_{}.{}.state'.format('*', '*', 'best'),
+            # type_str + '_{}_{}.{}.state'.format('*', '*', 'best'),
         )
 
         file_list = glob.glob(local_path)
         if not file_list:
             pretrained_path = os.path.join(
                 'models',
-                type_str + '_{}_{}.{}.state'.format('*', '*', '*'),
+                # type_str + '_{}_{}.{}.state'.format('*', '*', '*'),
             )
             file_list = glob.glob(pretrained_path)
         else:
