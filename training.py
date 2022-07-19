@@ -15,12 +15,10 @@ import torch.nn as nn
 from torch.optim import SGD, Adam
 from torch.utils.data import DataLoader
 
-import datasets
-import model
-
 from util.util import enumerateWithEstimate
+from datasets import LunaDataset
 from util.logconf import logging
-
+from model import LunaModel
 
 log = logging.getLogger(__name__)
 # log.setLevel(logging.WARN)
@@ -123,7 +121,7 @@ class ClassificationTrainingApp:
 
 
     def initModel(self):
-        model_cls = getattr(model, self.cli_args.model)
+        model_cls = LunaModel()
         model = model_cls()
 
         if self.cli_args.finetune:
