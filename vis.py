@@ -4,12 +4,12 @@ matplotlib.use('nbagg')
 import numpy as np
 import matplotlib.pyplot as plt
 
-from datasets import Ct, LunaDataset
+from p2ch14.dsets import Ct, LunaDataset
 
 clim=(-1000.0, 300)
 
 def findPositiveSamples(start_ndx=0, limit=100):
-    ds = LunaDataset()
+    ds = LunaDataset(sortby_str='label_and_size')
 
     positiveSample_list = []
     for sample_tup in ds.candidateInfo_list:
@@ -46,40 +46,40 @@ def showCandidate(series_uid, batch_ndx=None, **kwargs):
     ]
 
     subplot = fig.add_subplot(len(group_list) + 2, 3, 1)
-    subplot.set_title('index {}'.format(int(center_irc[0])), fontsize=30)
+    subplot.set_title('index {}'.format(int(center_irc.index)), fontsize=30)
     for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
         label.set_fontsize(20)
-    plt.imshow(ct.hu_a[int(center_irc[0])], clim=clim, cmap='gray')
+    plt.imshow(ct.hu_a[int(center_irc.index)], clim=clim, cmap='gray')
 
     subplot = fig.add_subplot(len(group_list) + 2, 3, 2)
-    subplot.set_title('row {}'.format(int(center_irc[1])), fontsize=30)
+    subplot.set_title('row {}'.format(int(center_irc.row)), fontsize=30)
     for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
         label.set_fontsize(20)
-    plt.imshow(ct.hu_a[:,int(center_irc[1])], clim=clim, cmap='gray')
+    plt.imshow(ct.hu_a[:,int(center_irc.row)], clim=clim, cmap='gray')
     plt.gca().invert_yaxis()
 
     subplot = fig.add_subplot(len(group_list) + 2, 3, 3)
-    subplot.set_title('col {}'.format(int(center_irc[2])), fontsize=30)
+    subplot.set_title('col {}'.format(int(center_irc.col)), fontsize=30)
     for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
         label.set_fontsize(20)
-    plt.imshow(ct.hu_a[:,:,int(center_irc[2])], clim=clim, cmap='gray')
+    plt.imshow(ct.hu_a[:,:,int(center_irc.col)], clim=clim, cmap='gray')
     plt.gca().invert_yaxis()
 
     subplot = fig.add_subplot(len(group_list) + 2, 3, 4)
-    subplot.set_title('index {}'.format(int(center_irc[0])), fontsize=30)
+    subplot.set_title('index {}'.format(int(center_irc.index)), fontsize=30)
     for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
         label.set_fontsize(20)
     plt.imshow(ct_a[ct_a.shape[0]//2], clim=clim, cmap='gray')
 
     subplot = fig.add_subplot(len(group_list) + 2, 3, 5)
-    subplot.set_title('row {}'.format(int(center_irc[1])), fontsize=30)
+    subplot.set_title('row {}'.format(int(center_irc.row)), fontsize=30)
     for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
         label.set_fontsize(20)
     plt.imshow(ct_a[:,ct_a.shape[1]//2], clim=clim, cmap='gray')
     plt.gca().invert_yaxis()
 
     subplot = fig.add_subplot(len(group_list) + 2, 3, 6)
-    subplot.set_title('col {}'.format(int(center_irc[2])), fontsize=30)
+    subplot.set_title('col {}'.format(int(center_irc.col)), fontsize=30)
     for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
         label.set_fontsize(20)
     plt.imshow(ct_a[:,:,ct_a.shape[2]//2], clim=clim, cmap='gray')
