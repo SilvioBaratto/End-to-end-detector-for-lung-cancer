@@ -180,8 +180,8 @@ class NoduleAnalysisApp:
 
     def initModelPath(self, type_str):
         local_path = os.path.join(
-            'data-unversioned',
-            'part2',
+            # 'data-unversioned',
+            # 'part2',
             'models',
             'p2ch13',#self.cli_args.tb_prefix,
             type_str + '_{}_{}.{}.state'.format('*', '*', 'best'),
@@ -190,8 +190,8 @@ class NoduleAnalysisApp:
         file_list = glob.glob(local_path)
         if not file_list:
             pretrained_path = os.path.join(
-                'data',
-                'part2',
+                # 'data',
+                # 'part2',
                 'models',
                 type_str + '_{}_{}.{}.state'.format('*', '*', '*'),
             )
