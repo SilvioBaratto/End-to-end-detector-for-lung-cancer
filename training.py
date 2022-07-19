@@ -41,7 +41,7 @@ class LunaTrainingApp:
         )
         parser.add_argument('--num-workers',
             help='Number of worker processes for background data loading',
-            default=24,
+            default=8,
             type=int,
         )
         parser.add_argument('--epochs',
