@@ -16,9 +16,7 @@ from torch.optim import SGD, Adam
 from torch.utils.data import DataLoader
 
 import dsets_classification
-import dsets_segmentation
 import model_classification
-import model_segmentation
 
 from util.util import enumerateWithEstimate
 from util.logconf import logging
@@ -49,7 +47,7 @@ class ClassificationTrainingApp:
         )
         parser.add_argument('--num-workers',
             help='Number of worker processes for background data loading',
-            default=8,
+            default=48,
             type=int,
         )
         parser.add_argument('--epochs',
