@@ -15,8 +15,10 @@ import torch.nn as nn
 from torch.optim import SGD, Adam
 from torch.utils.data import DataLoader
 
-import dsets
-import model
+import dsets_classification
+import dsets_segmentation
+import model_classification
+import model_segmentation
 
 from util.util import enumerateWithEstimate
 from util.logconf import logging
@@ -117,7 +119,7 @@ class ClassificationTrainingApp:
 
 
     def initModel(self):
-        model_cls = getattr(model, self.cli_args.model)
+        model_cls = getattr(model_classification, self.cli_args.model)
         model = model_cls()
 
         if self.cli_args.finetune:
@@ -151,7 +153,7 @@ class ClassificationTrainingApp:
         #return Adam(self.model.parameters(), lr=3e-4)
 
     def initTrainDl(self):
-        ds_cls = getattr(p2ch14.dsets, self.cli_args.dataset)
+        ds_cls = getattr(dsets_classification, self.cli_args.dataset)
 
         train_ds = ds_cls(
             val_stride=10,
@@ -173,7 +175,7 @@ class ClassificationTrainingApp:
         return train_dl
 
     def initValDl(self):
-        ds_cls = getattr(p2ch14.dsets, self.cli_args.dataset)
+        ds_cls = getattr(dsets_classification, self.cli_args.dataset)
 
         val_ds = ds_cls(
             val_stride=10,
@@ -310,7 +312,7 @@ class ClassificationTrainingApp:
 
 
         if augment:
-            input_g = p2ch14.model.augment3d(input_g)
+            input_g = model_classification.augment3d(input_g)
 
         logits_g, probability_g = self.model(input_g)
 

@@ -17,10 +17,10 @@ from torch.utils.data import DataLoader
 
 from util.util import enumerateWithEstimate
 # from .dsets import LunaDataset, Luna2dSegmentationDataset, getCt, getCandidateInfoList, CandidateInfoTuple
-from dsets import Luna2dSegmentationDataset, getCt, getCandidateInfoList, getCandidateInfoDict, CandidateInfoTuple
-from dsets import LunaDataset
-from model import UNetWrapper
-from model import LunaModel
+from dsets_segmentation import Luna2dSegmentationDataset, getCt, getCandidateInfoList, getCandidateInfoDict, CandidateInfoTuple
+from dsets_classification import LunaDataset
+from model_segmentation import UNetWrapper
+from model_classification import LunaModel
 
 from util.logconf import logging
 from util.util import xyz2irc, irc2xyz
