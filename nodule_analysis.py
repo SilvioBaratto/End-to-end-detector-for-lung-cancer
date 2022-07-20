@@ -123,7 +123,7 @@ class NoduleAnalysisApp:
         parser.add_argument('--segmentation-path',
             help="Path to the saved segmentation model",
             nargs='?',
-            default='data/part2/models/seg_2020-01-26_19.45.12_w4d3c1-bal_1_nodupe-label_pos-d1_fn8-adam.best.state',
+            default='models/seg_2020-01-26_19.45.12_w4d3c1-bal_1_nodupe-label_pos-d1_fn8-adam.best.state',
         )
 
         parser.add_argument('--cls-model',
@@ -134,7 +134,7 @@ class NoduleAnalysisApp:
         parser.add_argument('--classification-path',
             help="Path to the saved classification model",
             nargs='?',
-            default='data/part2/models/cls_2020-02-06_14.16.55_final-nodule-nonnodule.best.state',
+            default='models/cls_2020-02-06_14.16.55_final-nodule-nonnodule.best.state',
         )
 
         parser.add_argument('--malignancy-model',
