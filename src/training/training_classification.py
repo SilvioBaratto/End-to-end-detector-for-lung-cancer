@@ -121,32 +121,32 @@ class ClassificationTrainingApp:
 
     def initModel(self):
         model_cls = getattr(model, self.cli_args.model)
-        model = model_cls()
+        cls_model = model_cls()
 
         if self.cli_args.finetune:
             d = torch.load(self.cli_args.finetune, map_location='cpu')
             model_blocks = [
-                n for n, subm in model.named_children()
+                n for n, subm in cls_model.named_children()
                 if len(list(subm.parameters())) > 0
             ]
             finetune_blocks = model_blocks[-self.cli_args.finetune_depth:]
             log.info(f"finetuning from {self.cli_args.finetune}, blocks {' '.join(finetune_blocks)}")
-            model.load_state_dict(
+            cls_model.load_state_dict(
                 {
                     k: v for k,v in d['model_state'].items()
                     if k.split('.')[0] not in model_blocks[-1]
                 },
                 strict=False,
             )
-            for n, p in model.named_parameters():
+            for n, p in cls_model.named_parameters():
                 if n.split('.')[0] not in finetune_blocks:
                     p.requires_grad_(False)
         if self.use_cuda:
             log.info("Using CUDA; {} devices.".format(torch.cuda.device_count()))
             if torch.cuda.device_count() > 1:
-                model = nn.DataParallel(model)
-            model = model.to(self.device)
-        return model
+                cls_model = nn.DataParallel(cls_model)
+            cls_model = cls_model.to(self.device)
+        return cls_model
 
     def initOptimizer(self):
         lr = 0.003 if self.cli_args.finetune else 0.001
