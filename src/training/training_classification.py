@@ -18,8 +18,8 @@ import torch.nn as nn
 from torch.optim import SGD, Adam
 from torch.utils.data import DataLoader
 
-import dataset.dsets_classification
-import model.model_classification
+import dataset.dsets_classification 
+import model.model_classification 
 
 from util.util import enumerateWithEstimate
 from util.logconf import logging
@@ -120,7 +120,7 @@ class ClassificationTrainingApp:
 
 
     def initModel(self):
-        model_cls = getattr(model.model_classification, self.cli_args.model)
+        model_cls = getattr(model_classification, self.cli_args.model)
         model = model_cls()
 
         if self.cli_args.finetune:
@@ -154,7 +154,7 @@ class ClassificationTrainingApp:
         #return Adam(self.model.parameters(), lr=3e-4)
 
     def initTrainDl(self):
-        ds_cls = getattr(dataset.dsets_classification, self.cli_args.dataset)
+        ds_cls = getattr(dsets_classification, self.cli_args.dataset)
 
         train_ds = ds_cls(
             val_stride=10,

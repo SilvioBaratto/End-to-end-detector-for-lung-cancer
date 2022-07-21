@@ -516,7 +516,9 @@ class SegmentationTrainingApp:
 
         if isBest:
             best_path = os.path.join(
-                '..', '..', 'models',
+                '..', 
+                '..', 
+                'models',
                 self.cli_args.tb_prefix,
                 f'{type_str}_{self.time_str}_{self.cli_args.comment}.best.state')
             shutil.copyfile(file_path, best_path)
