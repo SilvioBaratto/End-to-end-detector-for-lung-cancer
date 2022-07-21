@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 # log.setLevel(logging.INFO)
 log.setLevel(logging.DEBUG)
 
-raw_cache = getCache('part2ch14_raw')
+raw_cache = getCache('cache_classification_raw')
 
 CandidateInfoTuple = namedtuple(
     'CandidateInfoTuple',
@@ -44,11 +44,11 @@ def getCandidateInfoList(requireOnDisk_bool=True):
     # We construct a set with all series_uids that are present on disk.
     # This will let us use the data, even if we haven't downloaded all of
     # the subsets yet.
-    mhd_list = glob.glob('../LUNA/subset*/*.mhd')
+    mhd_list = glob.glob('../../../LUNA/subset*/*.mhd')
     presentOnDisk_set = {os.path.split(p)[-1][:-4] for p in mhd_list}
 
     candidateInfo_list = []
-    with open('../LUNA/annotations_with_malignancy.csv', "r") as f:
+    with open('../../../LUNA/annotations_with_malignancy.csv', "r") as f:
         for row in list(csv.reader(f))[1:]:
             series_uid = row[0]
             annotationCenter_xyz = tuple([float(x) for x in row[1:4]])
@@ -57,7 +57,7 @@ def getCandidateInfoList(requireOnDisk_bool=True):
 
             candidateInfo_list.append(CandidateInfoTuple(True, True, isMal_bool, annotationDiameter_mm, series_uid, annotationCenter_xyz))
 
-    with open('../LUNA/candidates.csv', "r") as f:
+    with open('../../../LUNA/candidates.csv', "r") as f:
         for row in list(csv.reader(f))[1:]:
             series_uid = row[0]
 

@@ -2,6 +2,9 @@ import math
 import random
 from collections import namedtuple
 
+import sys
+sys.path.append("..")
+
 import torch
 from torch import nn as nn
 import torch.nn.functional as F
