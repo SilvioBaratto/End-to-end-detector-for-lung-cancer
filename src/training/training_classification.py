@@ -120,7 +120,7 @@ class ClassificationTrainingApp:
 
 
     def initModel(self):
-        model_cls = getattr(model_classification, self.cli_args.model)
+        model_cls = getattr(model.model_classification, self.cli_args.model)
         model = model_cls()
 
         if self.cli_args.finetune:
@@ -154,7 +154,7 @@ class ClassificationTrainingApp:
         #return Adam(self.model.parameters(), lr=3e-4)
 
     def initTrainDl(self):
-        ds_cls = getattr(dsets_classification, self.cli_args.dataset)
+        ds_cls = getattr(dataset.dsets_classification, self.cli_args.dataset)
 
         train_ds = ds_cls(
             val_stride=10,
@@ -176,7 +176,7 @@ class ClassificationTrainingApp:
         return train_dl
 
     def initValDl(self):
-        ds_cls = getattr(dsets_classification, self.cli_args.dataset)
+        ds_cls = getattr(dataset.dsets_classification, self.cli_args.dataset)
 
         val_ds = ds_cls(
             val_stride=10,
@@ -313,7 +313,7 @@ class ClassificationTrainingApp:
 
 
         if augment:
-            input_g = model_classification.augment3d(input_g)
+            input_g = model.model_classification.augment3d(input_g)
 
         logits_g, probability_g = self.model(input_g)
 
@@ -521,7 +521,8 @@ class ClassificationTrainingApp:
 
     def saveModel(self, type_str, epoch_ndx, isBest=False):
         file_path = os.path.join(
-            'data-unversioned',
+            '..',
+            '..',
             'models',
             self.cli_args.tb_prefix,
             '{}_{}_{}.{}.state'.format(
@@ -552,7 +553,8 @@ class ClassificationTrainingApp:
 
         if isBest:
             best_path = os.path.join(
-                'data-unversioned',
+                '..',
+                '..',
                 'models',
                 self.cli_args.tb_prefix,
                 '{}_{}_{}.{}.state'.format(

@@ -203,7 +203,7 @@ class SegmentationTrainingApp:
 
     def initTensorboardWriters(self):
         if self.trn_writer is None:
-            log_dir = os.path.join('runs', self.cli_args.tb_prefix, self.time_str)
+            log_dir = os.path.join('../../runs', self.cli_args.tb_prefix, self.time_str)
 
             self.trn_writer = SummaryWriter(
                 log_dir=log_dir + '_trn_seg_' + self.cli_args.comment)
@@ -482,8 +482,8 @@ class SegmentationTrainingApp:
 
     def saveModel(self, type_str, epoch_ndx, isBest=False):
         file_path = os.path.join(
-            'data-unversioned',
-            'part2',
+            '..',
+            '..',
             'models',
             self.cli_args.tb_prefix,
             '{}_{}_{}.{}.state'.format(
@@ -516,7 +516,7 @@ class SegmentationTrainingApp:
 
         if isBest:
             best_path = os.path.join(
-                'data-unversioned', 'part2', 'models',
+                '..', '..', 'models',
                 self.cli_args.tb_prefix,
                 f'{type_str}_{self.time_str}_{self.cli_args.comment}.best.state')
             shutil.copyfile(file_path, best_path)

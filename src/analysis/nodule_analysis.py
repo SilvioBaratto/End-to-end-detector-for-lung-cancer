@@ -108,7 +108,7 @@ class NoduleAnalysisApp:
         )
         parser.add_argument('--num-workers',
             help='Number of worker processes for background data loading',
-            default=4,
+            default=48,
             type=int,
         )
 
@@ -126,7 +126,7 @@ class NoduleAnalysisApp:
         parser.add_argument('--segmentation-path',
             help="Path to the saved segmentation model",
             nargs='?',
-            default='models/seg_2020-01-26_19.45.12_w4d3c1-bal_1_nodupe-label_pos-d1_fn8-adam.best.state',
+            default='../../models/seg_2020-01-26_19.45.12_w4d3c1-bal_1_nodupe-label_pos-d1_fn8-adam.best.state',
         )
 
         parser.add_argument('--cls-model',
@@ -137,7 +137,7 @@ class NoduleAnalysisApp:
         parser.add_argument('--classification-path',
             help="Path to the saved classification model",
             nargs='?',
-            default='models/cls_2020-02-06_14.16.55_final-nodule-nonnodule.best.state',
+            default='../../models/cls_2020-02-06_14.16.55_final-nodule-nonnodule.best.state',
         )
 
         parser.add_argument('--malignancy-model',
@@ -153,7 +153,7 @@ class NoduleAnalysisApp:
         )
 
         parser.add_argument('--tb-prefix',
-            default='p2ch14',
+            default='nodule_analysis',
             help="Data prefix to use for Tensorboard run. Defaults to chapter.",
         )
 
@@ -183,6 +183,8 @@ class NoduleAnalysisApp:
 
     def initModelPath(self, type_str):
         local_path = os.path.join(
+            '..',
+            '..',
             'models',
             type_str + '_{}_{}.{}.state'.format('*', '*', 'best'),
         )
@@ -190,6 +192,8 @@ class NoduleAnalysisApp:
         file_list = glob.glob(local_path)
         if not file_list:
             pretrained_path = os.path.join(
+                '..',
+                '..',
                 'models',
                 type_str + '_{}_{}.{}.state'.format('*', '*', '*'),
             )
@@ -225,7 +229,7 @@ class NoduleAnalysisApp:
         log.debug(self.cli_args.classification_path)
         cls_dict = torch.load(self.cli_args.classification_path)
 
-        model_cls = getattr(model_classification, self.cli_args.cls_model)
+        model_cls = getattr(model.model_classification, self.cli_args.cls_model)
         cls_model = model_cls()
         cls_model.load_state_dict(cls_dict['model_state'])
         cls_model.eval()
@@ -239,7 +243,7 @@ class NoduleAnalysisApp:
             cls_model.to(self.device)
 
         if self.cli_args.malignancy_path:
-            model_cls = getattr(model_classification, self.cli_args.malignancy_model)
+            model_cls = getattr(model.model_classification, self.cli_args.malignancy_model)
             malignancy_model = model_cls()
             malignancy_dict = torch.load(self.cli_args.malignancy_path)
             malignancy_model.load_state_dict(malignancy_dict['model_state'])
