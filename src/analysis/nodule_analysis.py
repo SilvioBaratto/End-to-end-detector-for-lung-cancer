@@ -126,7 +126,7 @@ class NoduleAnalysisApp:
         parser.add_argument('--segmentation-path',
             help="Path to the saved segmentation model",
             nargs='?',
-            default='../../models/classification/seg_2022-07-21_17.29.23_final_seg.best.state',
+            default='../../models/segmentation/seg_2022-07-21_17.29.23_final_seg.best.state',
         )
 
         parser.add_argument('--cls-model',
@@ -137,7 +137,7 @@ class NoduleAnalysisApp:
         parser.add_argument('--classification-path',
             help="Path to the saved classification model",
             nargs='?',
-            default='../../models/segmentation/cls_2022-07-21_19.09.18_nodule-nonnodule.best.state',
+            default='../../models/classification/cls_2022-07-21_19.09.18_nodule-nonnodule.best.state',
         )
 
         parser.add_argument('--malignancy-model',
