@@ -83,7 +83,7 @@ class ClassificationTrainingApp:
             default=1,
         )
         parser.add_argument('--tb-prefix',
-            default='p2ch14',
+            default='classification',
             help="Data prefix to use for Tensorboard run. Defaults to chapter.",
         )
         parser.add_argument('comment',

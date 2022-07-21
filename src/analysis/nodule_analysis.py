@@ -21,7 +21,7 @@ from dataset.dsets_segmentation import Luna2dSegmentationDataset
 from dataset.dsets_classification import LunaDataset, getCt, getCandidateInfoDict, getCandidateInfoList, CandidateInfoTuple
 from model.model_segmentation import UNetWrapper
 
-import model.model_classification
+import model.model_classification as model
 
 from util.logconf import logging
 from util.util import xyz2irc, irc2xyz
@@ -126,7 +126,7 @@ class NoduleAnalysisApp:
         parser.add_argument('--segmentation-path',
             help="Path to the saved segmentation model",
             nargs='?',
-            default='../../models/seg_2020-01-26_19.45.12_w4d3c1-bal_1_nodupe-label_pos-d1_fn8-adam.best.state',
+            default='../../models/classification/seg_2022-07-21_17.29.23_final_seg.best.state',
         )
 
         parser.add_argument('--cls-model',
@@ -137,7 +137,7 @@ class NoduleAnalysisApp:
         parser.add_argument('--classification-path',
             help="Path to the saved classification model",
             nargs='?',
-            default='../../models/cls_2020-02-06_14.16.55_final-nodule-nonnodule.best.state',
+            default='../../models/segmentation/cls_2022-07-21_19.09.18_nodule-nonnodule.best.state',
         )
 
         parser.add_argument('--malignancy-model',
@@ -229,7 +229,7 @@ class NoduleAnalysisApp:
         log.debug(self.cli_args.classification_path)
         cls_dict = torch.load(self.cli_args.classification_path)
 
-        model_cls = getattr(model.model_classification, self.cli_args.cls_model)
+        model_cls = getattr(model, self.cli_args.cls_model)
         cls_model = model_cls()
         cls_model.load_state_dict(cls_dict['model_state'])
         cls_model.eval()
@@ -243,7 +243,7 @@ class NoduleAnalysisApp:
             cls_model.to(self.device)
 
         if self.cli_args.malignancy_path:
-            model_cls = getattr(model.model_classification, self.cli_args.malignancy_model)
+            model_cls = getattr(model, self.cli_args.malignancy_model)
             malignancy_model = model_cls()
             malignancy_dict = torch.load(self.cli_args.malignancy_path)
             malignancy_model.load_state_dict(malignancy_dict['model_state'])
