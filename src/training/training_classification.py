@@ -176,7 +176,7 @@ class ClassificationTrainingApp:
         return train_dl
 
     def initValDl(self):
-        ds_cls = getattr(dataset.dsets_classification, self.cli_args.dataset)
+        ds_cls = getattr(dataset, self.cli_args.dataset)
 
         val_ds = ds_cls(
             val_stride=10,
