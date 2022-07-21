@@ -313,7 +313,7 @@ class ClassificationTrainingApp:
 
 
         if augment:
-            input_g = model.model_classification.augment3d(input_g)
+            input_g = model.augment3d(input_g)
 
         logits_g, probability_g = self.model(input_g)
 
