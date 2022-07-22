@@ -51,10 +51,10 @@ def getCandidateInfoList(requireOnDisk_bool=True):
             annotationDiameter_mm = float(row[4])
             isMal_bool = {'False': False, 'True': True}[row[5]]
 
-            candidateInfo_list.append(
+            candidateInfo_list.append(  # For each line in the annotations file that represent one nodule, ...
                 CandidateInfoTuple(
-                    True,
-                    True,
+                    True,   # IsNodule_bool
+                    True,   # hasAnnotation_bool
                     isMal_bool,
                     annotationDiameter_mm,
                     series_uid,
@@ -63,7 +63,7 @@ def getCandidateInfoList(requireOnDisk_bool=True):
             )
 
     with open('../../../LUNA/candidates.csv', "r") as f:
-        for row in list(csv.reader(f))[1:]:
+        for row in list(csv.reader(f))[1:]: # For each line in the candidates file ... 
             series_uid = row[0]
 
             if series_uid not in presentOnDisk_set and requireOnDisk_bool:
@@ -72,12 +72,12 @@ def getCandidateInfoList(requireOnDisk_bool=True):
             isNodule_bool = bool(int(row[4]))
             candidateCenter_xyz = tuple([float(x) for x in row[1:4]])
 
-            if not isNodule_bool:
-                candidateInfo_list.append(
+            if not isNodule_bool:   # ... but only the non-nodule (we have the others from earlier) ...
+                candidateInfo_list.append(  # we add a candidate record
                     CandidateInfoTuple(
-                        False,
-                        False,
-                        False,
+                        False,  # isNodule_bool
+                        False,  # hasAnnotation_bool
+                        False,  # IsMal_bool
                         0.0,
                         series_uid,
                         candidateCenter_xyz,
@@ -87,14 +87,16 @@ def getCandidateInfoList(requireOnDisk_bool=True):
     candidateInfo_list.sort(reverse=True)
     return candidateInfo_list
 
-@functools.lru_cache(1)
+@functools.lru_cache(1)  # This can be useful to keep Ct init from being a performance bottleneck
 def getCandidateInfoDict(requireOnDisk_bool=True):
     candidateInfo_list = getCandidateInfoList(requireOnDisk_bool)
     candidateInfo_dict = {}
 
     for candidateInfo_tup in candidateInfo_list:
         candidateInfo_dict.setdefault(candidateInfo_tup.series_uid,
-                                      []).append(candidateInfo_tup)
+                                      []).append(candidateInfo_tup) # Takes the list of candidates for the series UID from the dict
+                                                                    # defaulting to a fresh, empty list if we cannot find it. 
+                                                                    # Then appends the present candidateInfo_tup to it
 
     return candidateInfo_dict
 
@@ -121,32 +123,38 @@ class Ct:
         self.positiveInfo_list = [
             candidate_tup
             for candidate_tup in candidateInfo_list
-            if candidate_tup.isNodule_bool
+            if candidate_tup.isNodule_bool  # Filter for nodules
         ]
         self.positive_mask = self.buildAnnotationMask(self.positiveInfo_list)
-        self.positive_indexes = (self.positive_mask.sum(axis=(1,2))
-                                 .nonzero()[0].tolist())
+        self.positive_indexes = (self.positive_mask.sum(axis=(1,2)) # Gives us a 1D vector (over the slices) with the number
+                                                                    # of voxels flagged in the mask in each slice
+
+                                 .nonzero()[0].tolist())    # Takes indices of the mask slices that have a nonzero count,
+                                                            # which we make into a list
 
     def buildAnnotationMask(self, positiveInfo_list, threshold_hu = -700):
-        boundingBox_a = np.zeros_like(self.hu_a, dtype=np.bool)
+        boundingBox_a = np.zeros_like(self.hu_a, dtype=np.bool) # Starts with an all-False tensor of the same size as 
+                                                                # the Ct
 
-        for candidateInfo_tup in positiveInfo_list:
+        for candidateInfo_tup in positiveInfo_list: # Loops over the nodules. As a reminder that we are only looking at 
+                                                    # nodules, we call the variable positiveInfo_List
             center_irc = xyz2irc(
-                candidateInfo_tup.center_xyz,
+                candidateInfo_tup.center_xyz,   # CandidateInfo_tup is the same as we've seen previously: as returned
+                                                # by getCandidateInfoList
                 self.origin_xyz,
                 self.vxSize_xyz,
                 self.direction_a,
             )
-            ci = int(center_irc.index)
+            ci = int(center_irc.index)  # Gets the center voxel indices, our starting point
             cr = int(center_irc.row)
             cc = int(center_irc.col)
 
             index_radius = 2
             try:
                 while self.hu_a[ci + index_radius, cr, cc] > threshold_hu and \
-                        self.hu_a[ci - index_radius, cr, cc] > threshold_hu:
+                        self.hu_a[ci - index_radius, cr, cc] > threshold_hu:    # the search described previously
                     index_radius += 1
-            except IndexError:
+            except IndexError:      # the safety net for indexing beyond the size of the tensor
                 index_radius -= 1
 
             row_radius = 2
@@ -172,9 +180,10 @@ class Ct:
             boundingBox_a[
                  ci - index_radius: ci + index_radius + 1,
                  cr - row_radius: cr + row_radius + 1,
-                 cc - col_radius: cc + col_radius + 1] = True
+                 cc - col_radius: cc + col_radius + 1] = True   # After we get the nodule radius (the search itself
+                                                                # is left out), we mark the bounding box
 
-        mask_a = boundingBox_a & (self.hu_a > threshold_hu)
+        mask_a = boundingBox_a & (self.hu_a > threshold_hu) # Restrict the mask to voxels above our density threshold
 
         return mask_a
 
@@ -204,9 +213,9 @@ class Ct:
             slice_list.append(slice(start_ndx, end_ndx))
 
         ct_chunk = self.hu_a[tuple(slice_list)]
-        pos_chunk = self.positive_mask[tuple(slice_list)]
+        pos_chunk = self.positive_mask[tuple(slice_list)]   # Newly added
 
-        return ct_chunk, pos_chunk, center_irc
+        return ct_chunk, pos_chunk, center_irc  # New value returned here
 
 @functools.lru_cache(1, typed=True)
 def getCt(series_uid):
@@ -244,10 +253,11 @@ class Luna2dSegmentationDataset(Dataset):
 
         if isValSet_bool:
             assert val_stride > 0, val_stride
-            self.series_list = self.series_list[::val_stride]
+            self.series_list = self.series_list[::val_stride]   # Starting with a series list containing all our series
+                                                                # we keep only every val_stride-th element, starting with 0
             assert self.series_list
         elif val_stride > 0:
-            del self.series_list[::val_stride]
+            del self.series_list[::val_stride]  # If we are training, we delete every val_stride-th element instead
             assert self.series_list
 
         self.sample_list = []
@@ -255,20 +265,21 @@ class Luna2dSegmentationDataset(Dataset):
             index_count, positive_indexes = getCtSampleSize(series_uid)
 
             if self.fullCt_bool:
-                self.sample_list += [(series_uid, slice_ndx)
+                self.sample_list += [(series_uid, slice_ndx)                # Here we extend sample_list with every slice of the
+                                                                            # CT by using range ...
                                      for slice_ndx in range(index_count)]
             else:
-                self.sample_list += [(series_uid, slice_ndx)
+                self.sample_list += [(series_uid, slice_ndx)                # ... while here we take only the interesting slices
                                      for slice_ndx in positive_indexes]
 
-        self.candidateInfo_list = getCandidateInfoList()
+        self.candidateInfo_list = getCandidateInfoList()    # this is cached
 
-        series_set = set(self.series_list)
+        series_set = set(self.series_list)  # Makes a set for faster lookup 
         self.candidateInfo_list = [cit for cit in self.candidateInfo_list
-                                   if cit.series_uid in series_set]
+                                   if cit.series_uid in series_set] # Filters out the candidates from series not in our set
 
         self.pos_list = [nt for nt in self.candidateInfo_list
-                            if nt.isNodule_bool]
+                            if nt.isNodule_bool]    # For data balancing yet to come, we want a list of actual nodes.
 
         log.info("{!r}: {} {} series, {} slices, {} nodules".format(
             self,
@@ -287,12 +298,13 @@ class Luna2dSegmentationDataset(Dataset):
 
     def getitem_fullSlice(self, series_uid, slice_ndx):
         ct = getCt(series_uid)
-        ct_t = torch.zeros((self.contextSlices_count * 2 + 1, 512, 512))
+        ct_t = torch.zeros((self.contextSlices_count * 2 + 1, 512, 512))    # Preallocates the output
 
         start_ndx = slice_ndx - self.contextSlices_count
         end_ndx = slice_ndx + self.contextSlices_count + 1
         for i, context_ndx in enumerate(range(start_ndx, end_ndx)):
-            context_ndx = max(context_ndx, 0)
+            context_ndx = max(context_ndx, 0)   # When we reach beyond the bounds of the ct_a, we duplicate
+                                                # the frist or last slice.
             context_ndx = min(context_ndx, ct.hu_a.shape[0] - 1)
             ct_t[i] = torch.from_numpy(ct.hu_a[context_ndx].astype(np.float32))
 
@@ -325,14 +337,15 @@ class TrainingLuna2dSegmentationDataset(Luna2dSegmentationDataset):
         return self.getitem_trainingCrop(candidateInfo_tup)
 
     def getitem_trainingCrop(self, candidateInfo_tup):
-        ct_a, pos_a, center_irc = getCtRawCandidate(
+        ct_a, pos_a, center_irc = getCtRawCandidate(    # Gets the candidate with a bit of extra surrounding
             candidateInfo_tup.series_uid,
             candidateInfo_tup.center_xyz,
             (7, 96, 96),
         )
-        pos_a = pos_a[3:4]
+        pos_a = pos_a[3:4]  # Taking a one-element slice keeps the third dimension, which will be the 
+                            # single output channel
 
-        row_offset = random.randrange(0,32)
+        row_offset = random.randrange(0,32) # With two random numbers between 0 and 31, we crop both CT and mask
         col_offset = random.randrange(0,32)
         ct_t = torch.from_numpy(ct_a[:, row_offset:row_offset+64,
                                      col_offset:col_offset+64]).to(torch.float32)

@@ -323,26 +323,28 @@ class NoduleAnalysisApp:
             "Series",
         )
         all_confusion = np.zeros((3, 4), dtype=np.int)
-        for _, series_uid in series_iter:
-            ct = getCt(series_uid)
-            mask_a = self.segmentCt(ct, series_uid)
+        for _, series_uid in series_iter:   # Loops over the series UIDs
+            ct = getCt(series_uid)  # Gets the CT 
+            mask_a = self.segmentCt(ct, series_uid) # Runs our segmentation model on it
 
-            candidateInfo_list = self.groupSegmentationOutput(
+            candidateInfo_list = self.groupSegmentationOutput(  # Group the flagged voxels in the output
                 series_uid, ct, mask_a)
-            classifications_list = self.classifyCandidates(
+            classifications_list = self.classifyCandidates( # Runs our nodule classifier on them
                 ct, candidateInfo_list)
 
             if not self.cli_args.run_validation:
                 print(f"found nodule candidates in {series_uid}:")
                 for prob, prob_mal, center_xyz, center_irc in classifications_list:
-                    if prob > 0.5:
+                    if prob > 0.5:  # ... for all candidates found by the segmentation where the classifier assigned a
+                                    # nodule probability of 50% or more. 
                         s = f"nodule prob {prob:.3f}, "
                         if self.malignancy_model:
                             s += f"malignancy prob {prob_mal:.3f}, "
                         s += f"center xyz {center_xyz}"
                         print(s)
 
-            if series_uid in candidateInfo_dict:
+            if series_uid in candidateInfo_dict:    # If we have the ground truth data, we compute and print the confusion 
+                                                    # matrix and also add the current results to the total
                 one_confusion = match_and_score(
                     classifications_list, candidateInfo_dict[series_uid]
                 )
@@ -357,15 +359,16 @@ class NoduleAnalysisApp:
 
 
     def classifyCandidates(self, ct, candidateInfo_list):
-        cls_dl = self.initClassificationDl(candidateInfo_list)
+        cls_dl = self.initClassificationDl(candidateInfo_list)  # Again, we get a dataloader to loop over, this time 
+                                                                # based on our candidate list.
         classifications_list = []
         for batch_ndx, batch_tup in enumerate(cls_dl):
             input_t, _, _, series_list, center_list = batch_tup
 
-            input_g = input_t.to(self.device)
+            input_g = input_t.to(self.device)   # Sends the inputs to the device
             with torch.no_grad():
-                _, probability_nodule_g = self.cls_model(input_g)
-                if self.malignancy_model is not None:
+                _, probability_nodule_g = self.cls_model(input_g)   # Runs the inputs through the nodule vs non-nodule network
+                if self.malignancy_model is not None:   # If we have a malignancy model, we run that, too.
                     _, probability_mal_g = self.malignancy_model(input_g)
                 else:
                     probability_mal_g = torch.zeros_like(probability_nodule_g)
@@ -373,7 +376,8 @@ class NoduleAnalysisApp:
             zip_iter = zip(center_list,
                 probability_nodule_g[:,1].tolist(),
                 probability_mal_g[:,1].tolist())
-            for center_irc, prob_nodule, prob_mal in zip_iter:
+            for center_irc, prob_nodule, prob_mal in zip_iter:  # Does our bookkeping, constructing a list of our     
+                                                                # results
                 center_xyz = irc2xyz(center_irc,
                     direction_a=ct.direction_a,
                     origin_xyz=ct.origin_xyz,
@@ -384,25 +388,32 @@ class NoduleAnalysisApp:
         return classifications_list
 
     def segmentCt(self, ct, series_uid):
-        with torch.no_grad():
-            output_a = np.zeros_like(ct.hu_a, dtype=np.float32)
-            seg_dl = self.initSegmentationDl(series_uid)  #  <3>
+        with torch.no_grad():   # We do not need gradients here, so we don't build the graph
+            output_a = np.zeros_like(ct.hu_a, dtype=np.float32) # This array will hold our output: a float
+                                                                # array of probability annotations
+            
+            seg_dl = self.initSegmentationDl(series_uid)    # We get a dataloader that lets us loop over our
+                                                            # Ct in batches
             for input_t, _, _, slice_ndx_list in seg_dl:
 
-                input_g = input_t.to(self.device)
-                prediction_g = self.seg_model(input_g)
+                input_g = input_t.to(self.device)   # After moving the input to the GPU ... 
+                prediction_g = self.seg_model(input_g)  # .. We run segmentation model ...
 
-                for i, slice_ndx in enumerate(slice_ndx_list):
+                for i, slice_ndx in enumerate(slice_ndx_list):  # ... And copy each element to the output array.
                     output_a[slice_ndx] = prediction_g[i].cpu().numpy()
 
-            mask_a = output_a > 0.5
+            mask_a = output_a > 0.5 # Threshold the probability outputs to get a binary output, and the applies
+                                    # binary erosion as cleanup
+
             mask_a = morphology.binary_erosion(mask_a, iterations=1)
 
         return mask_a
 
     def groupSegmentationOutput(self, series_uid,  ct, clean_a):
-        candidateLabel_a, candidate_count = measurements.label(clean_a)
-        centerIrc_list = measurements.center_of_mass(
+        candidateLabel_a, candidate_count = measurements.label(clean_a) # Assign each voxel the label of the group it belongs to
+
+        centerIrc_list = measurements.center_of_mass(   # Gets the center of mass for each for each group as index, row, column
+                                                        # coordinates
             ct.hu_a.clip(-1000, 1000) + 1001,
             labels=candidateLabel_a,
             index=np.arange(1, candidate_count+1),
@@ -410,7 +421,7 @@ class NoduleAnalysisApp:
 
         candidateInfo_list = []
         for i, center_irc in enumerate(centerIrc_list):
-            center_xyz = irc2xyz(
+            center_xyz = irc2xyz(   # Converts the voxel coordinates to real patient coordinates
                 center_irc,
                 ct.origin_xyz,
                 ct.vxSize_xyz,
@@ -419,7 +430,8 @@ class NoduleAnalysisApp:
             assert np.all(np.isfinite(center_irc)), repr(['irc', center_irc, i, candidate_count])
             assert np.all(np.isfinite(center_xyz)), repr(['xyz', center_xyz])
             candidateInfo_tup = \
-                CandidateInfoTuple(False, False, False, 0.0, series_uid, center_xyz)
+                CandidateInfoTuple(False, False, False, 0.0, series_uid, center_xyz)    # Build our candidate info tuple and
+                                                                                        # appends it to the list of detections
             candidateInfo_list.append(candidateInfo_tup)
 
         return candidateInfo_list

@@ -21,7 +21,6 @@ def irc2xyz(coord_irc, origin_xyz, vxSize_xyz, direction_a):
     origin_a = np.array(origin_xyz)
     vxSize_a = np.array(vxSize_xyz)
     coords_xyz = (direction_a @ (cri_a * vxSize_a)) + origin_a  # the bottom three steps of our plan, all in one line
-    # coords_xyz = (direction_a @ (idx * vxSize_a)) + origin_a
     return XyzTuple(*coords_xyz)
 
 def xyz2irc(coord_xyz, origin_xyz, vxSize_xyz, direction_a):

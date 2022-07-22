@@ -100,11 +100,12 @@ class ClassificationTrainingApp:
         self.totalTrainingSamples_count = 0
 
         self.augmentation_dict = {}
-        if True:
+        if True:    # These values were empirically chosen to have a reasonable impact, but better
+                    # values probably exist
         # if self.cli_args.augmented or self.cli_args.augment_flip:
-            self.augmentation_dict['flip'] = True
+            self.augmentation_dict['flip'] = True   
         # if self.cli_args.augmented or self.cli_args.augment_offset:
-            self.augmentation_dict['offset'] = 0.1
+            self.augmentation_dict['offset'] = 0.1  
         # if self.cli_args.augmented or self.cli_args.augment_scale:
             self.augmentation_dict['scale'] = 0.2
         # if self.cli_args.augmented or self.cli_args.augment_rotate:
@@ -154,7 +155,7 @@ class ClassificationTrainingApp:
         #return Adam(self.model.parameters(), lr=3e-4)
 
     def initTrainDl(self):
-        ds_cls = getattr(dataset, self.cli_args.dataset)
+        ds_cls = getattr(dataset, self.cli_args.dataset)    # our custom dataset
 
         train_ds = ds_cls(
             val_stride=10,
@@ -166,11 +167,11 @@ class ClassificationTrainingApp:
         if self.use_cuda:
             batch_size *= torch.cuda.device_count()
 
-        train_dl = DataLoader(
+        train_dl = DataLoader(  # An. off-the-shelf class
             train_ds,
-            batch_size=batch_size,
+            batch_size=batch_size,  # batching is done automatically
             num_workers=self.cli_args.num_workers,
-            pin_memory=self.use_cuda,
+            pin_memory=self.use_cuda,   # Pinned memory transfers to GPU quickly
         )
 
         return train_dl
@@ -211,7 +212,7 @@ class ClassificationTrainingApp:
         log.info("Starting {}, {}".format(type(self).__name__, self.cli_args))
 
         train_dl = self.initTrainDl()
-        val_dl = self.initValDl()
+        val_dl = self.initValDl()   # The validation data loader is very similar to training
 
         best_score = 0.0
         validation_cadence = 5 if not self.cli_args.finetune else 1
@@ -246,19 +247,19 @@ class ClassificationTrainingApp:
     def doTraining(self, epoch_ndx, train_dl):
         self.model.train()
         train_dl.dataset.shuffleSamples()
-        trnMetrics_g = torch.zeros(
+        trnMetrics_g = torch.zeros( # Initilizes an empty metrics array
             METRICS_SIZE,
             len(train_dl.dataset),
             device=self.device,
         )
 
-        batch_iter = enumerateWithEstimate(
+        batch_iter = enumerateWithEstimate( # sets up our batch looping with time estimate
             train_dl,
             "E{} Training".format(epoch_ndx),
             start_ndx=train_dl.num_workers,
         )
         for batch_ndx, batch_tup in batch_iter:
-            self.optimizer.zero_grad()
+            self.optimizer.zero_grad()  # Frees any leftover gradient tensors
 
             loss_var = self.computeBatchLoss(
                 batch_ndx,
@@ -268,7 +269,7 @@ class ClassificationTrainingApp:
                 augment=True
             )
 
-            loss_var.backward()
+            loss_var.backward()     # Actually updates the model weights
             self.optimizer.step()
 
         self.totalTrainingSamples_count += len(train_dl.dataset)
@@ -278,7 +279,7 @@ class ClassificationTrainingApp:
 
     def doValidation(self, epoch_ndx, val_dl):
         with torch.no_grad():
-            self.model.eval()
+            self.model.eval()   # Turns off training-time behaviour
             valMetrics_g = torch.zeros(
                 METRICS_SIZE,
                 len(val_dl.dataset),
@@ -315,9 +316,9 @@ class ClassificationTrainingApp:
         if augment:
             input_g = model.augment3d(input_g)
 
-        logits_g, probability_g = self.model(input_g)
+        logits_g, probability_g = self.model(input_g)   
 
-        loss_g = nn.functional.cross_entropy(logits_g, label_g[:, 1],
+        loss_g = nn.functional.cross_entropy(logits_g, label_g[:, 1],   # Reduction = 'none' gives the loss per sample
                                              reduction="none")
         start_ndx = batch_ndx * batch_size
         end_ndx = start_ndx + label_t.size(0)
@@ -325,16 +326,14 @@ class ClassificationTrainingApp:
         _, predLabel_g = torch.max(probability_g, dim=1, keepdim=False,
                                    out=None)
 
-        # log.debug(index_g)
-
         metrics_g[METRICS_LABEL_NDX, start_ndx:end_ndx] = index_g
         metrics_g[METRICS_PRED_NDX, start_ndx:end_ndx] = predLabel_g
-        # metrics_g[METRICS_PRED_N_NDX, start_ndx:end_ndx] = probability_g[:,0]
+
         metrics_g[METRICS_PRED_P_NDX, start_ndx:end_ndx] = probability_g[:,1]
-        # metrics_g[METRICS_PRED_M_NDX, start_ndx:end_ndx] = probability_g[:,2]
+
         metrics_g[METRICS_LOSS_NDX, start_ndx:end_ndx] = loss_g
 
-        return loss_g.mean()
+        return loss_g.mean()    # This is the loss over the entire batch
 
 
     def logMetrics(
@@ -364,24 +363,11 @@ class ClassificationTrainingApp:
         posLabel_mask = ~negLabel_mask
         posPred_mask = ~negPred_mask
 
-        # benLabel_mask = metrics_t[METRICS_LABEL_NDX] == 1
-        # benPred_mask = metrics_t[METRICS_PRED_NDX] == 1
-        #
-        # malLabel_mask = metrics_t[METRICS_LABEL_NDX] == 2
-        # malPred_mask = metrics_t[METRICS_PRED_NDX] == 2
-
-        # benLabel_mask = ~malLabel_mask & posLabel_mask
-        # benPred_mask = ~malPred_mask & posLabel_mask
-
-        neg_count = int(negLabel_mask.sum())
+        neg_count = int(negLabel_mask.sum())    # convert to a normal Python Integer
         pos_count = int(posLabel_mask.sum())
-        # ben_count = int(benLabel_mask.sum())
-        # mal_count = int(malLabel_mask.sum())
 
         neg_correct = int((negLabel_mask & negPred_mask).sum())
         pos_correct = int((posLabel_mask & posPred_mask).sum())
-        # ben_correct = int((benLabel_mask & benPred_mask).sum())
-        # mal_correct = int((malLabel_mask & malPred_mask).sum())
 
         trueNeg_count = neg_correct
         truePos_count = pos_correct
@@ -393,14 +379,10 @@ class ClassificationTrainingApp:
         metrics_dict['loss/all'] = metrics_t[METRICS_LOSS_NDX].mean()
         metrics_dict['loss/neg'] = metrics_t[METRICS_LOSS_NDX, negLabel_mask].mean()
         metrics_dict['loss/pos'] = metrics_t[METRICS_LOSS_NDX, posLabel_mask].mean()
-        # metrics_dict['loss/ben'] = metrics_t[METRICS_LOSS_NDX, benLabel_mask].mean()
-        # metrics_dict['loss/mal'] = metrics_t[METRICS_LOSS_NDX, malLabel_mask].mean()
 
         metrics_dict['correct/all'] = (pos_correct + neg_correct) / metrics_t.shape[1] * 100
         metrics_dict['correct/neg'] = (neg_correct) / neg_count * 100
         metrics_dict['correct/pos'] = (pos_correct) / pos_count * 100
-        # metrics_dict['correct/ben'] = (ben_correct) / ben_count * 100
-        # metrics_dict['correct/mal'] = (mal_correct) / mal_count * 100
 
         precision = metrics_dict['pr/precision'] = \
             truePos_count / np.float64(truePos_count + falsePos_count)
@@ -419,12 +401,12 @@ class ClassificationTrainingApp:
         auc = (fp_diff * tp_avg).sum()
         metrics_dict['auc'] = auc
 
-        log.info(
+        log.info(  
             ("E{} {:8} {loss/all:.4f} loss, "
                  + "{correct/all:-5.1f}% correct, "
-                 + "{pr/precision:.4f} precision, "
-                 + "{pr/recall:.4f} recall, "
-                 + "{pr/f1_score:.4f} f1 score, "
+                 + "{pr/precision:.4f} precision, " # format string updated
+                 + "{pr/recall:.4f} recall, "       # format string updated
+                 + "{pr/f1_score:.4f} f1 score, "   # format string updated
                  + "{auc:.4f} auc"
             ).format(
                 epoch_ndx,
@@ -454,28 +436,7 @@ class ClassificationTrainingApp:
                 **metrics_dict,
             )
         )
-        # log.info(
-        #     ("E{} {:8} {loss/ben:.4f} loss, "
-        #          + "{correct/ben:-5.1f}% correct ({ben_correct:} of {ben_count:})"
-        #     ).format(
-        #         epoch_ndx,
-        #         mode_str + '_ben',
-        #         ben_correct=ben_correct,
-        #         ben_count=ben_count,
-        #         **metrics_dict,
-        #     )
-        # )
-        # log.info(
-        #     ("E{} {:8} {loss/mal:.4f} loss, "
-        #          + "{correct/mal:-5.1f}% correct ({mal_correct:} of {mal_count:})"
-        #     ).format(
-        #         epoch_ndx,
-        #         mode_str + '_mal',
-        #         mal_correct=mal_correct,
-        #         mal_count=mal_count,
-        #         **metrics_dict,
-        #     )
-        # )
+
         writer = getattr(self, mode_str + '_writer')
 
         for key, value in metrics_dict.items():
@@ -488,14 +449,6 @@ class ClassificationTrainingApp:
         writer.add_figure('roc', fig, self.totalTrainingSamples_count)
 
         writer.add_scalar('auc', auc, self.totalTrainingSamples_count)
-# # tag::logMetrics_writer_prcurve[]
-#        writer.add_pr_curve(
-#            'pr',
-#            metrics_t[METRICS_LABEL_NDX],
-#            metrics_t[METRICS_PRED_P_NDX],
-#            self.totalTrainingSamples_count,
-#        )
-# # end::logMetrics_writer_prcurve[]
 
         bins = np.linspace(0, 1)
 
@@ -570,32 +523,6 @@ class ClassificationTrainingApp:
 
         with open(file_path, 'rb') as f:
             log.info("SHA1: " + hashlib.sha1(f.read()).hexdigest())
-
-    # def logModelMetrics(self, model):
-    #     writer = getattr(self, 'trn_writer')
-    #
-    #     model = getattr(model, 'module', model)
-    #
-    #     for name, param in model.named_parameters():
-    #         if param.requires_grad:
-    #             min_data = float(param.data.min())
-    #             max_data = float(param.data.max())
-    #             max_extent = max(abs(min_data), abs(max_data))
-    #
-    #             # bins = [x/50*max_extent for x in range(-50, 51)]
-    #
-    #             try:
-    #                 writer.add_histogram(
-    #                     name.rsplit('.', 1)[-1] + '/' + name,
-    #                     param.data.cpu().numpy(),
-    #                     # metrics_a[METRICS_PRED_NDX, negHist_mask],
-    #                     self.totalTrainingSamples_count,
-    #                     # bins=bins,
-    #                 )
-    #             except Exception as e:
-    #                 log.error([min_data, max_data])
-    #                 raise
-
 
 if __name__ == '__main__':
     ClassificationTrainingApp().main()

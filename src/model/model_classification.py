@@ -64,20 +64,18 @@ class LunaModel(nn.Module):
     def __init__(self, in_channels=1, conv_channels=8):
         super().__init__()
 
-        self.tail_batchnorm = nn.BatchNorm3d(1)
+        self.tail_batchnorm = nn.BatchNorm3d(1) # Tail
 
-        self.block1 = LunaBlock(in_channels, conv_channels)
-        self.block2 = LunaBlock(conv_channels, conv_channels * 2)
-        self.block3 = LunaBlock(conv_channels * 2, conv_channels * 4)
-        self.block4 = LunaBlock(conv_channels * 4, conv_channels * 8)
+        self.block1 = LunaBlock(in_channels, conv_channels)             # backbone
+        self.block2 = LunaBlock(conv_channels, conv_channels * 2)       # backbone
+        self.block3 = LunaBlock(conv_channels * 2, conv_channels * 4)   # backbone
+        self.block4 = LunaBlock(conv_channels * 4, conv_channels * 8)   # backbone
 
-        # self.head_linear = nn.Linear(1152, 2)
-        self.head_linear = nn.Linear(1152, 2)
-        self.head_activation = nn.Softmax(dim=1)
+        self.head_linear = nn.Linear(1152, 2)       # head
+        self.head_activation = nn.Softmax(dim=1)    # head
 
         self._init_weights()
 
-    # see also https://github.com/pytorch/pytorch/issues/18182
     def _init_weights(self):
         for m in self.modules():
             if type(m) in {
@@ -106,7 +104,7 @@ class LunaModel(nn.Module):
         block_out = self.block4(block_out)
 
         conv_flat = block_out.view(
-            block_out.size(0),
+            block_out.size(0),  # the batch size
             -1,
         )
         linear_output = self.head_linear(conv_flat)

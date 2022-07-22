@@ -39,7 +39,8 @@ MaskTuple = namedtuple(
     'raw_dense_mask, dense_mask, body_mask, air_mask, raw_candidate_mask, candidate_mask, lung_mask, neg_mask, pos_mask',
 )
 
-@functools.lru_cache(1)
+@functools.lru_cache(1) # standard library in memory caching. requireOnDisk_bool defaults
+                        # to screening out series from data subsets that aren't in place yet
 def getCandidateInfoList(requireOnDisk_bool=True):
     # We construct a set with all series_uids that are present on disk.
     # This will let us use the data, even if we haven't downloaded all of
@@ -61,7 +62,8 @@ def getCandidateInfoList(requireOnDisk_bool=True):
         for row in list(csv.reader(f))[1:]:
             series_uid = row[0]
 
-            if series_uid not in presentOnDisk_set and requireOnDisk_bool:
+            if series_uid not in presentOnDisk_set and requireOnDisk_bool:  # if a series_uid isn't present, it's in subset
+                                                                            # we don't have on disk, so we should skip it
                 continue
 
             isNodule_bool = bool(int(row[4]))
@@ -77,7 +79,9 @@ def getCandidateInfoList(requireOnDisk_bool=True):
                     candidateCenter_xyz,
                 ))
 
-    candidateInfo_list.sort(reverse=True)
+    candidateInfo_list.sort(reverse=True)   # This means we have all of the actual nodule samples starting
+                                            # with the largest first, followed by all of the non-nodule samples
+                                            # (which don't have nodule size information)
     return candidateInfo_list
 
 @functools.lru_cache(1)
@@ -94,16 +98,21 @@ def getCandidateInfoDict(requireOnDisk_bool=True):
 class Ct:
     def __init__(self, series_uid):
         mhd_path = glob.glob(
-            '../../../LUNA/subset*/{}.mhd'.format(series_uid)
+            '../../../LUNA/subset*/{}.mhd'.format(series_uid)   # We don't care to track which subset a given series_uid is in,
+                                                                # so we wildcard the subset
         )[0]
 
-        ct_mhd = sitk.ReadImage(mhd_path)
-        ct_a = np.array(sitk.GetArrayFromImage(ct_mhd), dtype=np.float32)
+        ct_mhd = sitk.ReadImage(mhd_path)   # sitk.ReadImage implicitly consumes the .raw file in addition to the passed-in 
+                                            # .mhd file.
+
+        ct_a = np.array(sitk.GetArrayFromImage(ct_mhd), dtype=np.float32)   # Recreates an np.array since we want to convert
+                                                                            # the value type to np.float32
 
         # CTs are natively expressed in https://en.wikipedia.org/wiki/Hounsfield_scale
         # HU are scaled oddly, with 0 g/cc (air, approximately) being -1000 and 1 g/cc (water) being 0.
         # The lower bound gets rid of negative density stuff used to indicate out-of-FOV
         # The upper bound nukes any weird hotspots and clamps bone down
+
         ct_a.clip(-1000, 1000, ct_a)
 
         self.series_uid = series_uid
@@ -111,7 +120,9 @@ class Ct:
 
         self.origin_xyz = XyzTuple(*ct_mhd.GetOrigin())
         self.vxSize_xyz = XyzTuple(*ct_mhd.GetSpacing())
-        self.direction_a = np.array(ct_mhd.GetDirection()).reshape(3, 3)
+        self.direction_a = np.array(ct_mhd.GetDirection()).reshape(3, 3)    # Converts the directions to an array, and reshapes
+                                                                            # the nine-element array to its proper 3 x 3 matrix
+                                                                            # shape
 
     def getRawCandidate(self, center_xyz, width_irc):
         center_irc = xyz2irc(center_xyz, self.origin_xyz, self.vxSize_xyz, self.direction_a)
@@ -170,8 +181,8 @@ def getCtAugmentedCandidate(
     ct_t = torch.tensor(ct_chunk).unsqueeze(0).unsqueeze(0).to(torch.float32)
 
     transform_t = torch.eye(4)
-    # ... <1>
 
+    # Modifications to transform_tensor will go here
     for i in range(3):
         if 'flip' in augmentation_dict:
             if random.random() > 0.5:
@@ -238,7 +249,8 @@ class LunaDataset(Dataset):
         self.augmentation_dict = augmentation_dict
 
         if candidateInfo_list:
-            self.candidateInfo_list = copy.copy(candidateInfo_list)
+            self.candidateInfo_list = copy.copy(candidateInfo_list) # Copies the return value so the cached copy won't be impacted
+                                                                    # by altering self.candidateInfo_List
             self.use_cache = False
         else:
             self.candidateInfo_list = copy.copy(getCandidateInfoList())
@@ -251,7 +263,9 @@ class LunaDataset(Dataset):
 
         if isValSet_bool:
             assert val_stride > 0, val_stride
-            self.series_list = self.series_list[::val_stride]
+            self.series_list = self.series_list[::val_stride]   # Deletes the validation images (every val_stride-th item in 
+                                                                # the list) from self.candidateInfo_List. We made a copy earlier
+                                                                # so that we don't alter the original list
             assert self.series_list
         elif val_stride > 0:
             del self.series_list[::val_stride]
@@ -287,7 +301,8 @@ class LunaDataset(Dataset):
             '{}:1'.format(self.ratio_int) if self.ratio_int else 'unbalanced'
         ))
 
-    def shuffleSamples(self):
+    def shuffleSamples(self):   # We will call this at the top of each epoch to randomize the order
+                                # of samples being presented
         if self.ratio_int:
             random.shuffle(self.candidateInfo_list)
             random.shuffle(self.neg_list)
@@ -305,15 +320,15 @@ class LunaDataset(Dataset):
         if self.ratio_int:
             pos_ndx = ndx // (self.ratio_int + 1)
 
-            if ndx % (self.ratio_int + 1):
+            if ndx % (self.ratio_int + 1):  # A nonzero remainder means this should be a negative sample
                 neg_ndx = ndx - 1 - pos_ndx
-                neg_ndx %= len(self.neg_list)
+                neg_ndx %= len(self.neg_list)   # overflow results in wraparound
                 candidateInfo_tup = self.neg_list[neg_ndx]
             else:
-                pos_ndx %= len(self.pos_list)
+                pos_ndx %= len(self.pos_list)   # overflow results in wraparound
                 candidateInfo_tup = self.pos_list[pos_ndx]
         else:
-            candidateInfo_tup = self.candidateInfo_list[ndx]
+            candidateInfo_tup = self.candidateInfo_list[ndx]    # Returns the Nth sample if not balancing classes
 
         return self.sampleFromCandidateInfo_tup(
             candidateInfo_tup, candidateInfo_tup.isNodule_bool
@@ -331,7 +346,8 @@ class LunaDataset(Dataset):
                 self.use_cache,
             )
         elif self.use_cache:
-            candidate_a, center_irc = getCtRawCandidate(
+            candidate_a, center_irc = getCtRawCandidate(    # The return value candidate_a has shape (32, 48, 48); the axes
+                                                            # are depth, height and width
                 candidateInfo_tup.series_uid,
                 candidateInfo_tup.center_xyz,
                 width_irc,
@@ -345,7 +361,7 @@ class LunaDataset(Dataset):
                 width_irc,
             )
             candidate_t = torch.from_numpy(candidate_a).to(torch.float32)
-            candidate_t = candidate_t.unsqueeze(0)
+            candidate_t = candidate_t.unsqueeze(0)  # .unsqueeze(0) adds the channel dimension
 
         label_t = torch.tensor([False, False], dtype=torch.long)
 

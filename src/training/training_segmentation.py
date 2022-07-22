@@ -218,7 +218,7 @@ class SegmentationTrainingApp:
 
         best_score = 0.0
         self.validation_cadence = 5
-        for epoch_ndx in range(1, self.cli_args.epochs + 1):
+        for epoch_ndx in range(1, self.cli_args.epochs + 1):                # Our outermost loop, over the epochs
             log.info("Epoch {} of {}, {}/{} batches of size {}*{}".format(
                 epoch_ndx,
                 self.cli_args.epochs,
@@ -228,18 +228,20 @@ class SegmentationTrainingApp:
                 (torch.cuda.device_count() if self.use_cuda else 1),
             ))
 
-            trnMetrics_t = self.doTraining(epoch_ndx, train_dl)
-            self.logMetrics(epoch_ndx, 'trn', trnMetrics_t)
+            trnMetrics_t = self.doTraining(epoch_ndx, train_dl) 
+            self.logMetrics(epoch_ndx, 'trn', trnMetrics_t) # Logs the (scalar) metrics from training after
+                                                            # each epoch
 
-            if epoch_ndx == 1 or epoch_ndx % self.validation_cadence == 0:
+            if epoch_ndx == 1 or epoch_ndx % self.validation_cadence == 0:  # Only every validation cadence-th interval
                 # if validation is wanted
                 valMetrics_t = self.doValidation(epoch_ndx, val_dl)
                 score = self.logMetrics(epoch_ndx, 'val', valMetrics_t)
-                best_score = max(score, best_score)
+                best_score = max(score, best_score) # Computes the score. As we saw earlier, we take the recall
 
-                self.saveModel('seg', epoch_ndx, score == best_score)
+                self.saveModel('seg', epoch_ndx, score == best_score)   # Now we only need to write saveModel. The third parameter
+                                                                        # is whether we want to save it as best model, too.
 
-                self.logImages(epoch_ndx, 'trn', train_dl)
+                self.logImages(epoch_ndx, 'trn', train_dl)  # We validate the model and log images
                 self.logImages(epoch_ndx, 'val', val_dl)
 
         self.trn_writer.close()
@@ -286,15 +288,16 @@ class SegmentationTrainingApp:
                          classificationThreshold=0.5):
         input_t, label_t, series_list, _slice_ndx_list = batch_tup
 
-        input_g = input_t.to(self.device, non_blocking=True)
+        input_g = input_t.to(self.device, non_blocking=True)    # transfer to GPU
         label_g = label_t.to(self.device, non_blocking=True)
 
-        if self.segmentation_model.training and self.augmentation_dict:
+        if self.segmentation_model.training and self.augmentation_dict: # Augments as needed if we are training. In validation,
+                                                                        # we would skip this.
             input_g, label_g = self.augmentation_model(input_g, label_g)
 
-        prediction_g = self.segmentation_model(input_g)
+        prediction_g = self.segmentation_model(input_g) # Runs the segmentation model ...
 
-        diceLoss_g = self.diceLoss(prediction_g, label_g)
+        diceLoss_g = self.diceLoss(prediction_g, label_g)           # And applied our fine Dice loss
         fnLoss_g = self.diceLoss(prediction_g * label_g, label_g)
 
         start_ndx = batch_ndx * batch_size
@@ -302,13 +305,17 @@ class SegmentationTrainingApp:
 
         with torch.no_grad():
             predictionBool_g = (prediction_g[:, 0:1]
-                                > classificationThreshold).to(torch.float32)
+                                > classificationThreshold).to(torch.float32)    # We threshold the prediction to get "hard" Dice
+                                                                                # but convert to float for the latter multiplication
 
-            tp = (     predictionBool_g *  label_g).sum(dim=[1,2,3])
+            tp = (     predictionBool_g *  label_g).sum(dim=[1,2,3])    # Computing true positives, false positives and 
+                                                                        # false negatives is similar to what we did when computing
+                                                                        # the Dice loss
             fn = ((1 - predictionBool_g) *  label_g).sum(dim=[1,2,3])
             fp = (     predictionBool_g * (~label_g)).sum(dim=[1,2,3])
 
-            metrics_g[METRICS_LOSS_NDX, start_ndx:end_ndx] = diceLoss_g
+            metrics_g[METRICS_LOSS_NDX, start_ndx:end_ndx] = diceLoss_g # We store our metrics to a large tensor for future reference.
+                                                                        # This is per batch item rather than averaged over the batch
             metrics_g[METRICS_TP_NDX, start_ndx:end_ndx] = tp
             metrics_g[METRICS_FN_NDX, start_ndx:end_ndx] = fn
             metrics_g[METRICS_FP_NDX, start_ndx:end_ndx] = fp
@@ -316,25 +323,29 @@ class SegmentationTrainingApp:
         return diceLoss_g.mean() + fnLoss_g.mean() * 8
 
     def diceLoss(self, prediction_g, label_g, epsilon=1):
-        diceLabel_g = label_g.sum(dim=[1,2,3])
+        diceLabel_g = label_g.sum(dim=[1,2,3])                      # Sums over everything except the batch dimension to get
+                                                                    # get the positively labeled, (softly) positively detected,
+                                                                    # and (softly) correct positives per batch item
         dicePrediction_g = prediction_g.sum(dim=[1,2,3])
         diceCorrect_g = (prediction_g * label_g).sum(dim=[1,2,3])
 
         diceRatio_g = (2 * diceCorrect_g + epsilon) \
-            / (dicePrediction_g + diceLabel_g + epsilon)
+            / (dicePrediction_g + diceLabel_g + epsilon)    # The Dice ratio. To avoid problems when we accidentally have neither
+                                                            # predictions nor labels, we add 1 both numerator and denominator
 
-        return 1 - diceRatio_g
+        return 1 - diceRatio_g  # To make it a loss, we take 1 - Dice ratio, so lower loss is better
 
 
     def logImages(self, epoch_ndx, mode_str, dl):
-        self.segmentation_model.eval()
+        self.segmentation_model.eval()  # set the model to eval
 
-        images = sorted(dl.dataset.series_list)[:12]
+        images = sorted(dl.dataset.series_list)[:12]    # takes (the same) 12 CTs by bypassing the data loader and using
+                                                        # the dataset directly. The series list might be shuffled, so we sort
         for series_ndx, series_uid in enumerate(images):
             ct = getCt(series_uid)
 
             for slice_ndx in range(6):
-                ct_ndx = slice_ndx * (ct.hu_a.shape[0] - 1) // 5
+                ct_ndx = slice_ndx * (ct.hu_a.shape[0] - 1) // 5    # Selects six equidistant slices throughout the CT
                 sample_tup = dl.dataset.getitem_fullSlice(series_uid, ct_ndx)
 
                 ct_t, label_t, series_uid, ct_ndx = sample_tup
@@ -353,11 +364,11 @@ class SegmentationTrainingApp:
 
                 image_a = np.zeros((512, 512, 3), dtype=np.float32)
                 image_a[:,:,:] = ctSlice_a.reshape((512,512,1))
-                image_a[:,:,0] += prediction_a & (1 - label_a)
-                image_a[:,:,0] += (1 - prediction_a) & label_a
+                image_a[:,:,0] += prediction_a & (1 - label_a)  # False positive are flagged as red and overlaid on the image
+                image_a[:,:,0] += (1 - prediction_a) & label_a  # False negatives are orange
                 image_a[:,:,1] += ((1 - prediction_a) & label_a) * 0.5
 
-                image_a[:,:,1] += prediction_a & label_a
+                image_a[:,:,1] += prediction_a & label_a    # True positives are green
                 image_a *= 0.5
                 image_a.clip(0, 1, image_a)
 
@@ -413,7 +424,9 @@ class SegmentationTrainingApp:
         metrics_dict['percent_all/fn'] = \
             sum_a[METRICS_FN_NDX] / (allLabel_count or 1) * 100
         metrics_dict['percent_all/fp'] = \
-            sum_a[METRICS_FP_NDX] / (allLabel_count or 1) * 100
+            sum_a[METRICS_FP_NDX] / (allLabel_count or 1) * 100 # Can be larger thant 100% since we're comparing to the total
+                                                                # number of pixels labeled as candidate nodules, which is tiny
+                                                                # fraction of each image
 
 
         precision = metrics_dict['pr/precision'] = sum_a[METRICS_TP_NDX] \
@@ -457,29 +470,6 @@ class SegmentationTrainingApp:
 
         return score
 
-    # def logModelMetrics(self, model):
-    #     writer = getattr(self, 'trn_writer')
-    #
-    #     model = getattr(model, 'module', model)
-    #
-    #     for name, param in model.named_parameters():
-    #         if param.requires_grad:
-    #             min_data = float(param.data.min())
-    #             max_data = float(param.data.max())
-    #             max_extent = max(abs(min_data), abs(max_data))
-    #
-    #             # bins = [x/50*max_extent for x in range(-50, 51)]
-    #
-    #             writer.add_histogram(
-    #                 name.rsplit('.', 1)[-1] + '/' + name,
-    #                 param.data.cpu().numpy(),
-    #                 # metrics_a[METRICS_PRED_NDX, negHist_mask],
-    #                 self.totalTrainingSamples_count,
-    #                 # bins=bins,
-    #             )
-    #
-    #             # print name, param.data
-
     def saveModel(self, type_str, epoch_ndx, isBest=False):
         file_path = os.path.join(
             '..',
@@ -498,14 +488,14 @@ class SegmentationTrainingApp:
 
         model = self.segmentation_model
         if isinstance(model, torch.nn.DataParallel):
-            model = model.module
+            model = model.module    # Get rid of the DataParallel wrapper, it it exist
 
         state = {
             'sys_argv': sys.argv,
             'time': str(datetime.datetime.now()),
-            'model_state': model.state_dict(),
+            'model_state': model.state_dict(),  # Important part
             'model_name': type(model).__name__,
-            'optimizer_state' : self.optimizer.state_dict(),
+            'optimizer_state' : self.optimizer.state_dict(),    # Preserve momentum and so on
             'optimizer_name': type(self.optimizer).__name__,
             'epoch': epoch_ndx,
             'totalTrainingSamples_count': self.totalTrainingSamples_count,
