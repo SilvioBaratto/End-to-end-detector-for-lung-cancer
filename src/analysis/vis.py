@@ -8,8 +8,9 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.append('..')
 
-from dataset.dsets_classification import Ct, LunaDataset
+from dataset.dsets_classification import Ct as Ct_classification, LunaDataset
 from model.model_segmentation import SegmentationMask
+from dataset.dsets_segmentation import Ct as Ct_segmentation
 
 clim=(-1000.0, 300)
 
@@ -38,7 +39,7 @@ def showCandidate(series_uid, batch_ndx=None, **kwargs):
             print("Warning: no positive samples found; using first negative sample.")
             batch_ndx = 0
 
-    ct = Ct(series_uid)
+    ct = Ct_classification(series_uid)
     ct_t, pos_t, series_uid, center_irc = ds[batch_ndx]
     ct_a = ct_t[0].numpy()
 
@@ -104,7 +105,7 @@ def showCandidate(series_uid, batch_ndx=None, **kwargs):
 
 def build2dLungMask(series_uid, center_ndx):
     mask_model = SegmentationMask().to('cuda')
-    ct = Ct(series_uid)
+    ct = Ct_segmentation(series_uid)
 
     ct_g = torch.from_numpy(ct.hu_a[center_ndx].astype(np.float32)).unsqueeze(0).unsqueeze(0).to('cuda')
     pos_g = torch.from_numpy(ct.positive_mask[center_ndx].astype(np.float32)).unsqueeze(0).unsqueeze(0).to('cuda')
