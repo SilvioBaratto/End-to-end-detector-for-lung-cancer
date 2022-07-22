@@ -149,7 +149,7 @@ class NoduleAnalysisApp:
         parser.add_argument('--malignancy-path',
             help="Path to the saved malignancy classification model",
             nargs='?',
-            default=None,
+            default='../../models/classification/cls_2022-07-22_10.25.28_malben-finetune-twolayer.best.state',
         )
 
         parser.add_argument('--tb-prefix',
