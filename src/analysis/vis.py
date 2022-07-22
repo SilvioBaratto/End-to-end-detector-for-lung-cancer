@@ -9,7 +9,7 @@ import sys
 sys.path.append('..')
 
 from dataset.dsets_classification import Ct as Ct_classification, LunaDataset
-from model.model_segmentation import SegmentationMask
+from model.model_segmentation import SegmentationMask, MaskTuple
 from dataset.dsets_segmentation import Ct as Ct_segmentation
 
 clim=(-1000.0, 300)
@@ -112,3 +112,7 @@ def build2dLungMask(series_uid, center_ndx):
     input_g = ct_g / 1000
 
     label_g, neg_g, pos_g, lung_mask, mask_dict = mask_model(input_g, pos_g)
+
+    mask_tup = MaskTuple(**mask_dict)
+
+    return mask_tup
