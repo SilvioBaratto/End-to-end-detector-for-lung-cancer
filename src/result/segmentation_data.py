@@ -72,3 +72,13 @@ for ct_ndx, (ct, center_irc) in enumerate(ct_list):
         #if attr_ndx == 1: break
     #break
 
+fig = plt.figure(figsize=(40,10))
+
+subplot = fig.add_subplot(1, 4, 4)
+subplot.set_title('mal mask', fontsize=30)
+for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
+    label.set_fontsize(20)
+
+plt.imsave(ct.hu_a[int(center_irc.index)], clim=(-1000, 2000), cmap='gray')
+# plt.imshow(ct.hu_a[int(center_irc.index)], clim=(-1000, 2000), cmap='gray')
+# plt.imshow(mask_tup.pos_mask, clim=(0,1), cmap=tgray)
