@@ -1,4 +1,5 @@
 import matplotlib
+import torch
 matplotlib.use('nbagg')
 
 import numpy as np
