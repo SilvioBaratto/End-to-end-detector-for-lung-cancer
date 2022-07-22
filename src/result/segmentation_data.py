@@ -6,7 +6,7 @@ import torch
 import sys
 sys.path.append("..")
 
-from dataset.dsets_segmentation import getCandidateInfoList, getCt, old_build2dLungMask
+from dataset.dsets_segmentation import getCandidateInfoList, getCt
 from model.model_segmentation import SegmentationMask, MaskTuple
 from analysis.vis import build2dLungMask
 from util.util import xyz2irc
@@ -48,7 +48,6 @@ fig = plt.figure(figsize=(60,90))
 subplot_ndx = 0 
 for ct_ndx, (ct, center_irc) in enumerate(ct_list):
     mask_tup = build2dLungMask(ct.series_uid, int(center_irc.index))
-    old_tup = old_build2dLungMask(ct.series_uid, int(center_irc.index))
     
 #    ct_g = torch.from_numpy(ct.hu_a[int(center_irc.index)].astype(np.float32)).unsqueeze(0).unsqueeze(0).to('cuda')
 #    pos_g = torch.from_numpy(ct.positive_mask[int(center_irc.index)].astype(np.float32)).unsqueeze(0).unsqueeze(0).to('cuda')
@@ -65,15 +64,10 @@ for ct_ndx, (ct, center_irc) in enumerate(ct_list):
         
         #print(layer_func, ct.hu_a.shape, layer_func(ct, mask_tup, int(center_irc.index)).shape, center_irc.index)
 
-        plt.imshow(ct.hu_a[int(center_irc.index)], clim=(-1000, 3000), cmap='RdGy')
-        plt.imshow(mask_tup[attr_ndx][0][0].cpu(), clim=clim, cmap=tblue)
+        # plt.imshow(ct.hu_a[int(center_irc.index)], clim=(-1000, 3000), cmap='RdGy')
+        # plt.imshow(mask_tup[attr_ndx][0][0].cpu(), clim=clim, cmap=tblue)
 
-        subplot = fig.add_subplot(len(mask_tup), len(ct_list)*2, subplot_ndx+1)
-        subplot.set_title('old '+ attr_str)
-
-        plt.imshow(ct.hu_a[int(center_irc.index)], clim=(-1000, 3000), cmap='RdGy')
-        plt.imshow(old_tup[attr_ndx], clim=clim, cmap=tblue)
-        plt.imsave('test.png', old_tup[attr_ndx])
+        plt.imsave('test.png', ct.hu_a[int(center_irc.index)], cmap = 'RdGy')
         
         #if attr_ndx == 1: break
     #break
