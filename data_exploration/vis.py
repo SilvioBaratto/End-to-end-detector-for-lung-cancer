@@ -109,8 +109,10 @@ def build2dLungMask(series_uid, center_ndx):
     mask_model = SegmentationMask()
     ct = Ct(series_uid)
 
-    ct_g = torch.from_numpy(ct.hu_a[center_ndx].astype(np.float32)).unsqueeze(0).unsqueeze(0).to('cuda')
-    pos_g = torch.from_numpy(ct.positive_mask[center_ndx].astype(np.float32)).unsqueeze(0).unsqueeze(0).to('cuda')
+    # ct_g = torch.from_numpy(ct.hu_a[center_ndx].astype(np.float32)).unsqueeze(0).unsqueeze(0).to('cuda')
+    ct_g = torch.from_numpy(ct.hu_a[center_ndx].astype(np.float32)).unsqueeze(0).unsqueeze(0)
+    # pos_g = torch.from_numpy(ct.positive_mask[center_ndx].astype(np.float32)).unsqueeze(0).unsqueeze(0).to('cuda')
+    pos_g = torch.from_numpy(ct.positive_mask[center_ndx].astype(np.float32)).unsqueeze(0).unsqueeze(0)
     input_g = ct_g / 1000
     
     label_g, neg_g, pos_g, lung_mask, mask_dict = mask_model(input_g, pos_g)
