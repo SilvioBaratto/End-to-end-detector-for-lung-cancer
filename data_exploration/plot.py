@@ -9,6 +9,21 @@ from vis import build2dLungMask
 from util.util import xyz2irc
 import scipy.ndimage.morphology
 
+def transparent_cmap(cmap, N=255):
+    "Copy colormap and set alpha values"
+
+    mycmap = copy.deepcopy(cmap)
+    mycmap._init()
+    mycmap._lut[:,-1] = np.linspace(0, 0.75, N+4)
+    return mycmap
+    
+tgray = transparent_cmap(plt.cm.gray)
+tpurp = transparent_cmap(plt.cm.Purples)
+tblue = transparent_cmap(plt.cm.Blues)
+tgreen = transparent_cmap(plt.cm.Greens)
+torange = transparent_cmap(plt.cm.Oranges)
+tred = transparent_cmap(plt.cm.Reds)
+
 candidateInfo_list = getCandidateInfoList(requireOnDisk_bool=False)
 candidateInfo_list[0]
 
@@ -34,7 +49,7 @@ subplot.set_title('lung mask', fontsize=30)
 for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
     label.set_fontsize(20)
 plt.imshow(ct.hu_a[int(center_irc.index)], clim=(-1000, 2000), cmap='gray')
-# plt.imshow(mask_tup.lung_mask, clim=(0,1), cmap=tgray)
+plt.imshow(mask_tup.lung_mask, clim=(0,1), cmap=tgray)
 plt.imsave('test_1.png', ct.hu_a[int(center_irc.index)], cmap = 'gray')
 
 subplot = fig.add_subplot(1, 4, 2)
@@ -42,7 +57,7 @@ subplot.set_title('candidate mask', fontsize=30)
 for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
     label.set_fontsize(20)
 plt.imshow(ct.hu_a[int(center_irc.index)], clim=(-1000, 2000), cmap='gray')
-# plt.imshow(mask_tup.candidate_mask, clim=(0,1), cmap=tgray)
+plt.imshow(mask_tup.candidate_mask, clim=(0,1), cmap=tgray)
 plt.imsave('test_2.png', ct.hu_a[int(center_irc.index)], cmap = 'gray')
 
 subplot = fig.add_subplot(1, 4, 3)
@@ -50,7 +65,7 @@ subplot.set_title('ben mask', fontsize=30)
 for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
     label.set_fontsize(20)
 plt.imshow(ct.hu_a[int(center_irc.index)], clim=(-1000, 2000), cmap='gray')
-# plt.imshow(mask_tup.neg_mask, clim=(0,1), cmap=tgray)
+plt.imshow(mask_tup.neg_mask, clim=(0,1), cmap=tgray)
 plt.imsave('test_3.png', ct.hu_a[int(center_irc.index)], cmap = 'gray')
 
 subplot = fig.add_subplot(1, 4, 4)
@@ -58,5 +73,5 @@ subplot.set_title('mal mask', fontsize=30)
 for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
     label.set_fontsize(20)
 plt.imshow(ct.hu_a[int(center_irc.index)], clim=(-1000, 2000), cmap='gray')
-# plt.imshow(mask_tup.pos_mask, clim=(0,1), cmap=tgray)
+plt.imshow(mask_tup.pos_mask, clim=(0,1), cmap=tgray)
 plt.imsave('test_3.png', ct.hu_a[int(center_irc.index)], cmap = 'gray')
