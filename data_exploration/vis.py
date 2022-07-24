@@ -105,7 +105,8 @@ def showCandidate(series_uid, batch_ndx=None, **kwargs):
 
 
 def build2dLungMask(series_uid, center_ndx):
-    mask_model = SegmentationMask().to('cuda')
+    # mask_model = SegmentationMask().to('cuda')
+    mask_model = SegmentationMask()
     ct = Ct(series_uid)
 
     ct_g = torch.from_numpy(ct.hu_a[center_ndx].astype(np.float32)).unsqueeze(0).unsqueeze(0).to('cuda')
