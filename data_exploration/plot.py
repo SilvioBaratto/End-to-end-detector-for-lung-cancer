@@ -14,7 +14,8 @@ candidateInfo_list[0]
 
 clim=(0, 1.3)
 start_ndx = 3
-mask_model = SegmentationMask().to('cuda')
+# mask_model = SegmentationMask().to('cuda')
+mask_model = SegmentationMask()
 
 nit_ndx = 0
 candidateInfo_tup = candidateInfo_list[nit_ndx]
