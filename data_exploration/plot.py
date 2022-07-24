@@ -42,6 +42,34 @@ print(candidateInfo_tup, 'center_irc', center_irc)
 mask_tup = build2dLungMask(ct.series_uid, int(center_irc.index))
 mask_tup = mask_tup._make(x.cpu().numpy()[0][0] for x in mask_tup)
 
+nit_ndx = 1
+candidateInfo_tup = candidateInfo_list[nit_ndx]
+ct = getCt(candidateInfo_tup.series_uid)
+center_irc = xyz2irc(candidateInfo_tup.center_xyz, ct.origin_xyz, ct.vxSize_xyz, ct.direction_a)
+print(candidateInfo_tup, 'center_irc', center_irc)
+
+mask_tup = build2dLungMask(ct.series_uid, int(center_irc.index))
+mask_tup = mask_tup._make(x.cpu().numpy()[0][0] for x in mask_tup)
+
+
+fig = plt.figure(figsize=(20,20))
+
+slice_a = ((ct.hu_a[int(center_irc.index)] / 1000) + 1) / 2
+slice_a = slice_a.clip(0, 1)
+
+subplot = fig.add_subplot(1, 1, 1)
+subplot.set_title('mal mask', fontsize=30)
+for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
+    label.set_fontsize(20)
+plt.imshow(
+    slice_a + 3 * slice_a * mask_tup.pos_mask, 
+    #clim=(-2000, 2000), 
+    cmap='gray',
+)
+plt.savefig('mal.png')
+
+'''
+
 fig = plt.figure(figsize=(40,10))
 
 subplot = fig.add_subplot(1, 4, 1)
@@ -75,29 +103,4 @@ for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
 plt.imshow(ct.hu_a[int(center_irc.index)], clim=(-1000, 2000), cmap='gray')
 plt.imshow(mask_tup.pos_mask, clim=(0,1), cmap=tgray)
 plt.savefig('test_4.png')
-
-nit_ndx = 1
-candidateInfo_tup = candidateInfo_list[nit_ndx]
-ct = getCt(candidateInfo_tup.series_uid)
-center_irc = xyz2irc(candidateInfo_tup.center_xyz, ct.origin_xyz, ct.vxSize_xyz, ct.direction_a)
-print(candidateInfo_tup, 'center_irc', center_irc)
-
-mask_tup = build2dLungMask(ct.series_uid, int(center_irc.index))
-mask_tup = mask_tup._make(x.cpu().numpy()[0][0] for x in mask_tup)
-
-
-fig = plt.figure(figsize=(20,20))
-
-slice_a = ((ct.hu_a[int(center_irc.index)] / 1000) + 1) / 2
-slice_a = slice_a.clip(0, 1)
-
-subplot = fig.add_subplot(1, 1, 1)
-subplot.set_title('mal mask', fontsize=30)
-for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
-    label.set_fontsize(20)
-plt.imshow(
-    slice_a + 3 * slice_a * mask_tup.pos_mask, 
-    #clim=(-2000, 2000), 
-    cmap='gray',
-)
-plt.savefig('mal.png')
+'''
