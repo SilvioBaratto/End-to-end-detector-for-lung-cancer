@@ -16,7 +16,7 @@ def transparent_cmap(cmap, N=255):
     mycmap._init()
     mycmap._lut[:,-1] = np.linspace(0, 0.75, N+4)
     return mycmap
-    
+
 tgray = transparent_cmap(plt.cm.gray)
 tpurp = transparent_cmap(plt.cm.Purples)
 tblue = transparent_cmap(plt.cm.Blues)
@@ -58,7 +58,7 @@ for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
     label.set_fontsize(20)
 plt.imshow(ct.hu_a[int(center_irc.index)], clim=(-1000, 2000), cmap='gray')
 plt.imshow(mask_tup.candidate_mask, clim=(0,1), cmap=tgray)
-plt.imsave('test_2.png', ct.hu_a[int(center_irc.index)], cmap = 'gray')
+plt.savefig('test_1.png')
 
 subplot = fig.add_subplot(1, 4, 3)
 subplot.set_title('ben mask', fontsize=30)
@@ -66,7 +66,7 @@ for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
     label.set_fontsize(20)
 plt.imshow(ct.hu_a[int(center_irc.index)], clim=(-1000, 2000), cmap='gray')
 plt.imshow(mask_tup.neg_mask, clim=(0,1), cmap=tgray)
-plt.imsave('test_3.png', ct.hu_a[int(center_irc.index)], cmap = 'gray')
+plt.savefig('test_2.png')
 
 subplot = fig.add_subplot(1, 4, 4)
 subplot.set_title('mal mask', fontsize=30)
@@ -74,4 +74,4 @@ for label in (subplot.get_xticklabels() + subplot.get_yticklabels()):
     label.set_fontsize(20)
 plt.imshow(ct.hu_a[int(center_irc.index)], clim=(-1000, 2000), cmap='gray')
 plt.imshow(mask_tup.pos_mask, clim=(0,1), cmap=tgray)
-plt.imsave('test_3.png', ct.hu_a[int(center_irc.index)], cmap = 'gray')
+plt.savefig('test_3.png')
